@@ -58,6 +58,15 @@ namespace StudentAI
                                         ChessPiece[,] boardAfterMove = board.RawBoard;
                                         boardAfterMove[toX, toY] = boardAfterMove[fromX, fromY];
                                         boardAfterMove[fromX, fromY] = ChessPiece.Empty;
+                                        // handle the Promotion case
+                                        if (boardAfterMove[toX, toY] == ChessPiece.BlackPawn && toY == ChessBoard.NumberOfRows - 1)
+                                        {
+                                            boardAfterMove[toX, toY] = ChessPiece.BlackQueen;
+                                        }
+                                        if (boardAfterMove[toX, toY] == ChessPiece.WhitePawn && toY == 0)
+                                        {
+                                            boardAfterMove[toX, toY] = ChessPiece.WhiteQueen;
+                                        }
                                         if (IsInCheck(boardAfterMove, opponentColor))
                                         {
                                             potentialMove.Flag = ChessFlag.Check;
