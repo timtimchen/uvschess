@@ -473,7 +473,7 @@ namespace StudentAI
         /// <param name="board">a chess raw board</param>
         /// <param name="color">player's color</param>
         /// <returns> an Integer as evaluation score</returns>
-        public int EvaluateBoard (ChessBoard board, ChessColor color)
+        public int EvaluateBoard(ChessBoard board, ChessColor color)
         {
             int valueFacotr = (color == ChessColor.Black) ? -1 : 1;
             int sumScore = 0;
@@ -635,8 +635,8 @@ namespace StudentAI
         /// <summary>
         /// This method generates all valid moves for myColor based on the currentBoard
         /// </summary>
-        /// <param name="currentBoard">This is the current board to generate the moves for.</param>
-        /// <param name="myColor">This is the color of the player to generate the moves for.</param>
+        /// <param name="board">This is the current board to generate the moves for.</param>
+        /// <param name="playerColor">This is the color of the player to generate the moves for.</param>
         /// <returns>List of ChessMoves</returns>
         List<ChessMove> GetAllMoves(ChessBoard board, ChessColor playerColor)
         {
@@ -700,8 +700,7 @@ namespace StudentAI
                 }
             }
             // check King's safety
-            bool kingInCheckOfKnight = false;
-            bool kingInCheckOfOthers = false;
+            bool kingInCheck = false;
             ChessLocation attackingKnight = new ChessLocation(0, 0);
             // check if King in check of Knight
             foreach (ChessLocation oppKnight in opponentKnightLocation)
@@ -709,379 +708,386 @@ namespace StudentAI
                 if ((Math.Abs(oppKnight.X - kingLocation.X) == 2 && Math.Abs(oppKnight.Y - kingLocation.Y) == 1) ||
                     (Math.Abs(oppKnight.X - kingLocation.X) == 1 && Math.Abs(oppKnight.Y - kingLocation.Y) == 2))
                 {
-                    kingInCheckOfKnight = true;
+                    kingInCheck = true;
                     attackingKnight.X = oppKnight.X;
                     attackingKnight.Y = oppKnight.Y;
                 }
             }
-            // check eight directions if there is possible check
-            int i; // counting steps
-            i = 1;
-            while (kingLocation.X + i < ChessBoard.NumberOfColumns)  // go east
+            if (!kingInCheck)
             {
-                if (i == 1 && board[kingLocation.X + i, kingLocation.Y] == opponentKing)
+                kingInCheck = checkEightDirection(board, playerColor, kingLocation);
+            }
+            if (!kingInCheck)
+            {
+                // check eight directions if there is possible check
+                int i; // counting steps
+                i = 1;
+                while (kingLocation.X + i < ChessBoard.NumberOfColumns)  // go east
                 {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X + i, kingLocation.Y] == opponentRook)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X + i, kingLocation.Y] == opponentQueen)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                // if found a piece in this way which can't attack the king, get more details
-                if (board[kingLocation.X + i, kingLocation.Y] != ChessPiece.Empty)
-                {
-                    if (PieceColor(board[kingLocation.X + i, kingLocation.Y]) == playerColor)
+                    if (i == 1 && board[kingLocation.X + i, kingLocation.Y] == opponentKing)
                     {
-                        int j = 1;
-                        while (kingLocation.X + i + j < ChessBoard.NumberOfColumns)
-                        {
-                            if (board[kingLocation.X + i + j, kingLocation.Y] == opponentRook || board[kingLocation.X + i + j, kingLocation.Y] == opponentQueen)
-                            {
-                                for (int k = 0; k < myPieces.Count; k++)  //find the safe guard and remove it from the waiting list
-                                {
-                                    if (myPieces[k].X == kingLocation.X + i && myPieces[k].Y == kingLocation.Y)
-                                    {
-                                        myPieces.RemoveAt(k);
-                                        break;
-                                    }
-                                }
-                                if (board[kingLocation.X + i, kingLocation.Y] == myRook || board[kingLocation.X + i, kingLocation.Y] == myQueen)
-                                {
-                                    for (int k = 1; k < i; k++)
-                                    {
-                                        allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X + i, kingLocation.Y), new ChessLocation(kingLocation.X + i - k, kingLocation.Y)));
-                                    }
-                                    for (int k = 1; k <= j; k++)
-                                    {
-                                        allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X + i, kingLocation.Y), new ChessLocation(kingLocation.X + i + k, kingLocation.Y)));
-                                    }
-                                }
-                                break;
-                            }
-                            if (board[kingLocation.X + i + j, kingLocation.Y] != ChessPiece.Empty) break;
-                            j++;
-                        }
+                        kingInCheck = true;
+                        break;
                     }
-                    break;
-                }
-                i++;  // if next grid is empty, continue searching
-            }
-            i = 1;
-            while (kingLocation.X - i >= 0)  // go west
-            {
-                if (i == 1 && board[kingLocation.X - i, kingLocation.Y] == opponentKing)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X - i, kingLocation.Y] == opponentRook)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X - i, kingLocation.Y] == opponentQueen)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                // if found a piece in this way which can't attack the king, check more details
-                if (board[kingLocation.X - i, kingLocation.Y] != ChessPiece.Empty)
-                {
-                    if (PieceColor(board[kingLocation.X - i, kingLocation.Y]) == playerColor)
+                    if (board[kingLocation.X + i, kingLocation.Y] == opponentRook)
                     {
-                        int j = 1;
-                        while (kingLocation.X - i - j < ChessBoard.NumberOfColumns)
-                        {
-                            if (board[kingLocation.X - i - j, kingLocation.Y] == opponentRook || board[kingLocation.X - i - j, kingLocation.Y] == opponentQueen)
-                            {
-                                for (int k = 0; k < myPieces.Count; k++)  //find the safe guard and remove it from the waiting list
-                                {
-                                    if (myPieces[k].X == kingLocation.X - i && myPieces[k].Y == kingLocation.Y)
-                                    {
-                                        myPieces.RemoveAt(k);
-                                        break;
-                                    }
-                                }
-                                if (board[kingLocation.X - i, kingLocation.Y] == myRook || board[kingLocation.X - i, kingLocation.Y] == myQueen)
-                                {
-                                    for (int k = 1; k < i; k++)
-                                    {
-                                        allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X - i, kingLocation.Y), new ChessLocation(kingLocation.X - i + k, kingLocation.Y)));
-                                    }
-                                    for (int k = 1; k <= j; k++)
-                                    {
-                                        allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X - i, kingLocation.Y), new ChessLocation(kingLocation.X - i - k, kingLocation.Y)));
-                                    }
-                                }
-                                break;
-                            }
-                            if (board[kingLocation.X - i - j, kingLocation.Y] != ChessPiece.Empty) break;
-                            j++;
-                        }
+                        kingInCheck = true;
+                        break;
                     }
-                    break;
-                }
-                i++;  // if next grid is empty, continue searching
-            }
-            i = 1;
-            while (kingLocation.Y + i < ChessBoard.NumberOfRows)  // go south
-            {
-                if (i == 1 && board[kingLocation.X, kingLocation.Y + i] == opponentKing)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X, kingLocation.Y + i] == opponentRook)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X, kingLocation.Y + i] == opponentQueen)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                // if found a piece in this way which can't attack the king, check more details
-                if (board[kingLocation.X, kingLocation.Y + i] != ChessPiece.Empty)
-                {
-                    if (PieceColor(board[kingLocation.X, kingLocation.Y + i]) == playerColor)
+                    if (board[kingLocation.X + i, kingLocation.Y] == opponentQueen)
                     {
-                        int j = 1;
-                        while (kingLocation.X < ChessBoard.NumberOfColumns + i + j)
-                        {
-                            if (board[kingLocation.X, kingLocation.Y + i + j] == opponentRook || board[kingLocation.X, kingLocation.Y + i + j] == opponentQueen)
-                            {
-                                for (int k = 0; k < myPieces.Count; k++)  //find the safe guard and remove it from the waiting list
-                                {
-                                    if (myPieces[k].X == kingLocation.X && myPieces[k].Y == kingLocation.Y + i)
-                                    {
-                                        myPieces.RemoveAt(k);
-                                        break;
-                                    }
-                                }
-                                if (board[kingLocation.X, kingLocation.Y + i] == myRook || board[kingLocation.X, kingLocation.Y + i] == myQueen)
-                                {
-                                    for (int k = 1; k < i; k++)
-                                    {
-                                        allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y + i), new ChessLocation(kingLocation.X, kingLocation.Y + i - k)));
-                                    }
-                                    for (int k = 1; k <= j; k++)
-                                    {
-                                        allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y + i), new ChessLocation(kingLocation.X, kingLocation.Y + i + k)));
-                                    }
-                                }
-                                if (board[kingLocation.X, kingLocation.Y + i] == ChessPiece.BlackPawn)
-                                {
-                                    allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y + i), new ChessLocation(kingLocation.X, kingLocation.Y + i - 1)));
-                                    if (kingLocation.Y + i == 1)
-                                    {
-                                        allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y + i), new ChessLocation(kingLocation.X, kingLocation.Y + i - 2)));
-                                    }
-                                }
-                                break;
-                            }
-                            if (board[kingLocation.X, kingLocation.Y + i + j] != ChessPiece.Empty) break;
-                            j++;
-                        }
+                        kingInCheck = true;
+                        break;
                     }
-                    break;
-                }
-                i++;  // if next grid is empty, continue searching
-            }
-            i = 1;
-            while (kingLocation.Y - i >= 0)  // go north
-            {
-                if (i == 1 && board[kingLocation.X, kingLocation.Y - i] == opponentKing)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X, kingLocation.Y - i] == opponentRook)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X, kingLocation.Y - i] == opponentQueen)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                // if found a piece in this way which can't attack the king, check more details
-                if (board[kingLocation.X, kingLocation.Y - i] != ChessPiece.Empty)
-                {
-                    if (PieceColor(board[kingLocation.X, kingLocation.Y - i]) == playerColor)
+                    // if found a piece in this way which can't attack the king, get more details
+                    if (board[kingLocation.X + i, kingLocation.Y] != ChessPiece.Empty)
                     {
-                        int j = 1;
-                        while (kingLocation.X < ChessBoard.NumberOfColumns - i - j)
+                        if (PieceColor(board[kingLocation.X + i, kingLocation.Y]) == playerColor)
                         {
-                            if (board[kingLocation.X, kingLocation.Y - i - j] == opponentRook || board[kingLocation.X, kingLocation.Y - i - j] == opponentQueen)
+                            int j = 1;
+                            while (kingLocation.X + i + j < ChessBoard.NumberOfColumns)
                             {
-                                for (int k = 0; k < myPieces.Count; k++)  //find the safe guard and remove it from the waiting list
+                                if (board[kingLocation.X + i + j, kingLocation.Y] == opponentRook || board[kingLocation.X + i + j, kingLocation.Y] == opponentQueen)
                                 {
-                                    if (myPieces[k].X == kingLocation.X && myPieces[k].Y == kingLocation.Y - i)
+                                    for (int k = 0; k < myPieces.Count; k++)  //find the safe guard and remove it from the waiting list
                                     {
-                                        myPieces.RemoveAt(k);
-                                        break;
+                                        if (myPieces[k].X == kingLocation.X + i && myPieces[k].Y == kingLocation.Y)
+                                        {
+                                            myPieces.RemoveAt(k);
+                                            break;
+                                        }
                                     }
+                                    if (board[kingLocation.X + i, kingLocation.Y] == myRook || board[kingLocation.X + i, kingLocation.Y] == myQueen)
+                                    {
+                                        for (int k = 1; k < i; k++)
+                                        {
+                                            allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X + i, kingLocation.Y), new ChessLocation(kingLocation.X + i - k, kingLocation.Y)));
+                                        }
+                                        for (int k = 1; k <= j; k++)
+                                        {
+                                            allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X + i, kingLocation.Y), new ChessLocation(kingLocation.X + i + k, kingLocation.Y)));
+                                        }
+                                    }
+                                    break;
                                 }
-                                if (board[kingLocation.X, kingLocation.Y - i] == myRook || board[kingLocation.X, kingLocation.Y - i] == myQueen)
-                                {
-                                    for (int k = 1; k < i; k++)
-                                    {
-                                        allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y - i), new ChessLocation(kingLocation.X, kingLocation.Y - i + k)));
-                                    }
-                                    for (int k = 1; k <= j; k++)
-                                    {
-                                        allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y - i), new ChessLocation(kingLocation.X, kingLocation.Y - i - k)));
-                                    }
-                                }
-                                if (board[kingLocation.X, kingLocation.Y - i] == ChessPiece.WhitePawn)
-                                {
-                                    allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y - i), new ChessLocation(kingLocation.X, kingLocation.Y - i - 1)));
-                                    if (kingLocation.Y - i == 6)
-                                    {
-                                        allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y - i), new ChessLocation(kingLocation.X, kingLocation.Y - i - 2)));
-                                    }
-                                }
-                                break;
+                                if (board[kingLocation.X + i + j, kingLocation.Y] != ChessPiece.Empty) break;
+                                j++;
                             }
-                            if (board[kingLocation.X, kingLocation.Y - i - j] != ChessPiece.Empty) break;
-                            j++;
                         }
+                        break;
                     }
-                    break;
+                    i++;  // if next grid is empty, continue searching
                 }
-                i++;  // if next grid is empty, continue searching
-            }
-            i = 1;
-            while (kingLocation.X + i < ChessBoard.NumberOfColumns && kingLocation.Y + i < ChessBoard.NumberOfRows)  // go southeast
-            {
-                if (i == 1 && board[kingLocation.X + i, kingLocation.Y + i] == opponentKing)
+                i = 1;
+                while (kingLocation.X - i >= 0)  // go west
                 {
-                    kingInCheckOfOthers = true;
-                    break;
+                    if (i == 1 && board[kingLocation.X - i, kingLocation.Y] == opponentKing)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X - i, kingLocation.Y] == opponentRook)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X - i, kingLocation.Y] == opponentQueen)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    // if found a piece in this way which can't attack the king, check more details
+                    if (board[kingLocation.X - i, kingLocation.Y] != ChessPiece.Empty)
+                    {
+                        if (PieceColor(board[kingLocation.X - i, kingLocation.Y]) == playerColor)
+                        {
+                            int j = 1;
+                            while (kingLocation.X - i - j < ChessBoard.NumberOfColumns)
+                            {
+                                if (board[kingLocation.X - i - j, kingLocation.Y] == opponentRook || board[kingLocation.X - i - j, kingLocation.Y] == opponentQueen)
+                                {
+                                    for (int k = 0; k < myPieces.Count; k++)  //find the safe guard and remove it from the waiting list
+                                    {
+                                        if (myPieces[k].X == kingLocation.X - i && myPieces[k].Y == kingLocation.Y)
+                                        {
+                                            myPieces.RemoveAt(k);
+                                            break;
+                                        }
+                                    }
+                                    if (board[kingLocation.X - i, kingLocation.Y] == myRook || board[kingLocation.X - i, kingLocation.Y] == myQueen)
+                                    {
+                                        for (int k = 1; k < i; k++)
+                                        {
+                                            allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X - i, kingLocation.Y), new ChessLocation(kingLocation.X - i + k, kingLocation.Y)));
+                                        }
+                                        for (int k = 1; k <= j; k++)
+                                        {
+                                            allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X - i, kingLocation.Y), new ChessLocation(kingLocation.X - i - k, kingLocation.Y)));
+                                        }
+                                    }
+                                    break;
+                                }
+                                if (board[kingLocation.X - i - j, kingLocation.Y] != ChessPiece.Empty) break;
+                                j++;
+                            }
+                        }
+                        break;
+                    }
+                    i++;  // if next grid is empty, continue searching
                 }
-                if (i == 1 && playerColor == ChessColor.Black && board[kingLocation.X + i, kingLocation.Y + i] == ChessPiece.WhitePawn)
+                i = 1;
+                while (kingLocation.Y + i < ChessBoard.NumberOfRows)  // go south
                 {
-                    kingInCheckOfOthers = true;
-                    break;
+                    if (i == 1 && board[kingLocation.X, kingLocation.Y + i] == opponentKing)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X, kingLocation.Y + i] == opponentRook)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X, kingLocation.Y + i] == opponentQueen)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    // if found a piece in this way which can't attack the king, check more details
+                    if (board[kingLocation.X, kingLocation.Y + i] != ChessPiece.Empty)
+                    {
+                        if (PieceColor(board[kingLocation.X, kingLocation.Y + i]) == playerColor)
+                        {
+                            int j = 1;
+                            while (kingLocation.X < ChessBoard.NumberOfColumns + i + j)
+                            {
+                                if (board[kingLocation.X, kingLocation.Y + i + j] == opponentRook || board[kingLocation.X, kingLocation.Y + i + j] == opponentQueen)
+                                {
+                                    for (int k = 0; k < myPieces.Count; k++)  //find the safe guard and remove it from the waiting list
+                                    {
+                                        if (myPieces[k].X == kingLocation.X && myPieces[k].Y == kingLocation.Y + i)
+                                        {
+                                            myPieces.RemoveAt(k);
+                                            break;
+                                        }
+                                    }
+                                    if (board[kingLocation.X, kingLocation.Y + i] == myRook || board[kingLocation.X, kingLocation.Y + i] == myQueen)
+                                    {
+                                        for (int k = 1; k < i; k++)
+                                        {
+                                            allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y + i), new ChessLocation(kingLocation.X, kingLocation.Y + i - k)));
+                                        }
+                                        for (int k = 1; k <= j; k++)
+                                        {
+                                            allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y + i), new ChessLocation(kingLocation.X, kingLocation.Y + i + k)));
+                                        }
+                                    }
+                                    if (board[kingLocation.X, kingLocation.Y + i] == ChessPiece.BlackPawn)
+                                    {
+                                        allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y + i), new ChessLocation(kingLocation.X, kingLocation.Y + i - 1)));
+                                        if (kingLocation.Y + i == 1)
+                                        {
+                                            allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y + i), new ChessLocation(kingLocation.X, kingLocation.Y + i - 2)));
+                                        }
+                                    }
+                                    break;
+                                }
+                                if (board[kingLocation.X, kingLocation.Y + i + j] != ChessPiece.Empty) break;
+                                j++;
+                            }
+                        }
+                        break;
+                    }
+                    i++;  // if next grid is empty, continue searching
                 }
-                if (board[kingLocation.X + i, kingLocation.Y + i] == opponentBishop)
+                i = 1;
+                while (kingLocation.Y - i >= 0)  // go north
                 {
-                    kingInCheckOfOthers = true;
-                    break;
+                    if (i == 1 && board[kingLocation.X, kingLocation.Y - i] == opponentKing)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X, kingLocation.Y - i] == opponentRook)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X, kingLocation.Y - i] == opponentQueen)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    // if found a piece in this way which can't attack the king, check more details
+                    if (board[kingLocation.X, kingLocation.Y - i] != ChessPiece.Empty)
+                    {
+                        if (PieceColor(board[kingLocation.X, kingLocation.Y - i]) == playerColor)
+                        {
+                            int j = 1;
+                            while (kingLocation.X < ChessBoard.NumberOfColumns - i - j)
+                            {
+                                if (board[kingLocation.X, kingLocation.Y - i - j] == opponentRook || board[kingLocation.X, kingLocation.Y - i - j] == opponentQueen)
+                                {
+                                    for (int k = 0; k < myPieces.Count; k++)  //find the safe guard and remove it from the waiting list
+                                    {
+                                        if (myPieces[k].X == kingLocation.X && myPieces[k].Y == kingLocation.Y - i)
+                                        {
+                                            myPieces.RemoveAt(k);
+                                            break;
+                                        }
+                                    }
+                                    if (board[kingLocation.X, kingLocation.Y - i] == myRook || board[kingLocation.X, kingLocation.Y - i] == myQueen)
+                                    {
+                                        for (int k = 1; k < i; k++)
+                                        {
+                                            allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y - i), new ChessLocation(kingLocation.X, kingLocation.Y - i + k)));
+                                        }
+                                        for (int k = 1; k <= j; k++)
+                                        {
+                                            allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y - i), new ChessLocation(kingLocation.X, kingLocation.Y - i - k)));
+                                        }
+                                    }
+                                    if (board[kingLocation.X, kingLocation.Y - i] == ChessPiece.WhitePawn)
+                                    {
+                                        allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y - i), new ChessLocation(kingLocation.X, kingLocation.Y - i - 1)));
+                                        if (kingLocation.Y - i == 6)
+                                        {
+                                            allMoves.Add(new ChessMove(new ChessLocation(kingLocation.X, kingLocation.Y - i), new ChessLocation(kingLocation.X, kingLocation.Y - i - 2)));
+                                        }
+                                    }
+                                    break;
+                                }
+                                if (board[kingLocation.X, kingLocation.Y - i - j] != ChessPiece.Empty) break;
+                                j++;
+                            }
+                        }
+                        break;
+                    }
+                    i++;  // if next grid is empty, continue searching
                 }
-                if (board[kingLocation.X + i, kingLocation.Y + i] == opponentQueen)
+                i = 1;
+                while (kingLocation.X + i < ChessBoard.NumberOfColumns && kingLocation.Y + i < ChessBoard.NumberOfRows)  // go southeast
                 {
-                    kingInCheckOfOthers = true;
-                    break;
+                    if (i == 1 && board[kingLocation.X + i, kingLocation.Y + i] == opponentKing)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (i == 1 && playerColor == ChessColor.Black && board[kingLocation.X + i, kingLocation.Y + i] == ChessPiece.WhitePawn)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X + i, kingLocation.Y + i] == opponentBishop)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X + i, kingLocation.Y + i] == opponentQueen)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    // if found a piece in this way which can't attack the king, it is a safe direction, then break
+                    if (board[kingLocation.X + i, kingLocation.Y + i] != ChessPiece.Empty)
+                    {
+                        break;
+                    }
+                    i++;  // if next grid is empty, continue searching
                 }
-                // if found a piece in this way which can't attack the king, it is a safe direction, then break
-                if (board[kingLocation.X + i, kingLocation.Y + i] != ChessPiece.Empty)
+                i = 1;
+                while (kingLocation.X - i >= 0 && kingLocation.Y + i < ChessBoard.NumberOfRows)  // go southwest
                 {
-                    break;
+                    if (i == 1 && board[kingLocation.X - i, kingLocation.Y + i] == opponentKing)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (i == 1 && playerColor == ChessColor.Black && board[kingLocation.X - i, kingLocation.Y + i] == ChessPiece.WhitePawn)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X - i, kingLocation.Y + i] == opponentBishop)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X - i, kingLocation.Y + i] == opponentQueen)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    // if found a piece in this way which can't attack the king, it is a safe direction, then break
+                    if (board[kingLocation.X - i, kingLocation.Y + i] != ChessPiece.Empty)
+                    {
+                        break;
+                    }
+                    i++;  // if next grid is empty, continue searching
                 }
-                i++;  // if next grid is empty, continue searching
-            }
-            i = 1;
-            while (kingLocation.X - i >= 0 && kingLocation.Y + i < ChessBoard.NumberOfRows)  // go southwest
-            {
-                if (i == 1 && board[kingLocation.X - i, kingLocation.Y + i] == opponentKing)
+                i = 1;
+                while (kingLocation.X + i < ChessBoard.NumberOfColumns && kingLocation.Y - i >= 0)  // go northeast
                 {
-                    kingInCheckOfOthers = true;
-                    break;
+                    if (i == 1 && board[kingLocation.X + i, kingLocation.Y - i] == opponentKing)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (i == 1 && playerColor == ChessColor.White && board[kingLocation.X + i, kingLocation.Y - i] == ChessPiece.BlackPawn)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X + i, kingLocation.Y - i] == opponentBishop)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X + i, kingLocation.Y - i] == opponentQueen)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    // if found a piece in this way which can't attack the king, it is a safe direction, then break
+                    if (board[kingLocation.X + i, kingLocation.Y - i] != ChessPiece.Empty)
+                    {
+                        break;
+                    }
+                    i++;  // if next grid is empty, continue searching
                 }
-                if (i == 1 && playerColor == ChessColor.Black && board[kingLocation.X - i, kingLocation.Y + i] == ChessPiece.WhitePawn)
+                i = 1;
+                while (kingLocation.X - i >= 0 && kingLocation.Y - i >= 0)  // go northwest
                 {
-                    kingInCheckOfOthers = true;
-                    break;
+                    if (i == 1 && board[kingLocation.X - i, kingLocation.Y - i] == opponentKing)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (i == 1 && playerColor == ChessColor.White && board[kingLocation.X - i, kingLocation.Y - i] == ChessPiece.BlackPawn)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X - i, kingLocation.Y - i] == opponentBishop)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    if (board[kingLocation.X - i, kingLocation.Y - i] == opponentQueen)
+                    {
+                        kingInCheck = true;
+                        break;
+                    }
+                    // if found a piece in this way which can't attack the king, it is a safe direction, then break
+                    if (board[kingLocation.X - i, kingLocation.Y - i] != ChessPiece.Empty)
+                    {
+                        break;
+                    }
+                    i++;  // if next grid is empty, continue searching
                 }
-                if (board[kingLocation.X - i, kingLocation.Y + i] == opponentBishop)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X - i, kingLocation.Y + i] == opponentQueen)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                // if found a piece in this way which can't attack the king, it is a safe direction, then break
-                if (board[kingLocation.X - i, kingLocation.Y + i] != ChessPiece.Empty)
-                {
-                    break;
-                }
-                i++;  // if next grid is empty, continue searching
-            }
-            i = 1;
-            while (kingLocation.X + i < ChessBoard.NumberOfColumns && kingLocation.Y - i >= 0)  // go northeast
-            {
-                if (i == 1 && board[kingLocation.X + i, kingLocation.Y - i] == opponentKing)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (i == 1 && playerColor == ChessColor.White && board[kingLocation.X + i, kingLocation.Y - i] == ChessPiece.BlackPawn)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X + i, kingLocation.Y - i] == opponentBishop)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X + i, kingLocation.Y - i] == opponentQueen)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                // if found a piece in this way which can't attack the king, it is a safe direction, then break
-                if (board[kingLocation.X + i, kingLocation.Y - i] != ChessPiece.Empty)
-                {
-                    break;
-                }
-                i++;  // if next grid is empty, continue searching
-            }
-            i = 1;
-            while (kingLocation.X - i >= 0 && kingLocation.Y - i >= 0)  // go northwest
-            {
-                if (i == 1 && board[kingLocation.X - i, kingLocation.Y - i] == opponentKing)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (i == 1 && playerColor == ChessColor.White && board[kingLocation.X - i, kingLocation.Y - i] == ChessPiece.BlackPawn)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X - i, kingLocation.Y - i] == opponentBishop)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                if (board[kingLocation.X - i, kingLocation.Y - i] == opponentQueen)
-                {
-                    kingInCheckOfOthers = true;
-                    break;
-                }
-                // if found a piece in this way which can't attack the king, it is a safe direction, then break
-                if (board[kingLocation.X - i, kingLocation.Y - i] != ChessPiece.Empty)
-                {
-                    break;
-                }
-                i++;  // if next grid is empty, continue searching
             }
 
-            if (!kingInCheckOfKnight)
+            if (!kingInCheck)
             {
 
             }
@@ -1094,6 +1100,105 @@ namespace StudentAI
             return allMoves;
         }
 
+        public bool CheckEightDirection(ChessBoard board, ChessColor colorOfPlayer, ChessLocation kingLocation)
+        {
+            ChessPiece opponentKing = (colorOfPlayer == ChessColor.Black) ? ChessPiece.WhiteKing : ChessPiece.BlackKing;
+            ChessPiece opponentQueen = (colorOfPlayer == ChessColor.Black) ? ChessPiece.WhiteQueen : ChessPiece.BlackQueen;
+            ChessPiece opponentRook = (colorOfPlayer == ChessColor.Black) ? ChessPiece.WhiteRook : ChessPiece.BlackRook;
+            ChessPiece opponentKnight = (colorOfPlayer == ChessColor.Black) ? ChessPiece.WhiteKnight : ChessPiece.BlackKnight;
+            ChessPiece opponentBishop = (colorOfPlayer == ChessColor.Black) ? ChessPiece.WhiteBishop : ChessPiece.BlackBishop;
+            // get King's position and opponent Knights position
+            int KingX = kingLocation.X;
+            int KingY = kingLocation.Y;
+            // check eight directions if there is possible check
+            int i; // counting steps
+            i = 1;
+            while (KingX + i < ChessBoard.NumberOfColumns)  // go east
+            {
+                if (i == 1 && board[KingX + i, KingY] == opponentKing) return true;
+                if (board[KingX + i, KingY] == opponentRook) return true;
+                if (board[KingX + i, KingY] == opponentQueen) return true;
+                // if found a piece in this way which can't attack the king, it is a safe direction, then break
+                if (board[KingX + i, KingY] != ChessPiece.Empty) break;
+                i++;  // if next grid is empty, continue searching
+            }
+            i = 1;
+            while (KingX - i >= 0)  // go west
+            {
+                if (i == 1 && board[KingX - i, KingY] == opponentKing) return true;
+                if (board[KingX - i, KingY] == opponentRook) return true;
+                if (board[KingX - i, KingY] == opponentQueen) return true;
+                // if found a piece in this way which can't attack the king, it is a safe direction, then break
+                if (board[KingX - i, KingY] != ChessPiece.Empty) break;
+                i++;  // if next grid is empty, continue searching
+            }
+            i = 1;
+            while (KingY + i < ChessBoard.NumberOfRows)  // go south
+            {
+                if (i == 1 && board[KingX, KingY + i] == opponentKing) return true;
+                if (board[KingX, KingY + i] == opponentRook) return true;
+                if (board[KingX, KingY + i] == opponentQueen) return true;
+                // if found a piece in this way which can't attack the king, it is a safe direction, then break
+                if (board[KingX, KingY + i] != ChessPiece.Empty) break;
+                i++;  // if next grid is empty, continue searching
+            }
+            i = 1;
+            while (KingY - i >= 0)  // go north
+            {
+                if (i == 1 && board[KingX, KingY - i] == opponentKing) return true;
+                if (board[KingX, KingY - i] == opponentRook) return true;
+                if (board[KingX, KingY - i] == opponentQueen) return true;
+                // if found a piece in this way which can't attack the king, it is a safe direction, then break
+                if (board[KingX, KingY - i] != ChessPiece.Empty) break;
+                i++;  // if next grid is empty, continue searching
+            }
+            i = 1;
+            while (KingX + i < ChessBoard.NumberOfColumns && KingY + i < ChessBoard.NumberOfRows)  // go southeast
+            {
+                if (i == 1 && board[KingX + i, KingY + i] == opponentKing) return true;
+                if (i == 1 && colorOfPlayer == ChessColor.Black && board[KingX + i, KingY + i] == ChessPiece.WhitePawn) return true;
+                if (board[KingX + i, KingY + i] == opponentBishop) return true;
+                if (board[KingX + i, KingY + i] == opponentQueen) return true;
+                // if found a piece in this way which can't attack the king, it is a safe direction, then break
+                if (board[KingX + i, KingY + i] != ChessPiece.Empty) break;
+                i++;  // if next grid is empty, continue searching
+            }
+            i = 1;
+            while (KingX - i >= 0 && KingY + i < ChessBoard.NumberOfRows)  // go southwest
+            {
+                if (i == 1 && board[KingX - i, KingY + i] == opponentKing) return true;
+                if (i == 1 && colorOfPlayer == ChessColor.Black && board[KingX - i, KingY + i] == ChessPiece.WhitePawn) return true;
+                if (board[KingX - i, KingY + i] == opponentBishop) return true;
+                if (board[KingX - i, KingY + i] == opponentQueen) return true;
+                // if found a piece in this way which can't attack the king, it is a safe direction, then break
+                if (board[KingX - i, KingY + i] != ChessPiece.Empty) break;
+                i++;  // if next grid is empty, continue searching
+            }
+            i = 1;
+            while (KingX + i < ChessBoard.NumberOfColumns && KingY - i >= 0)  // go northeast
+            {
+                if (i == 1 && board[KingX + i, KingY - i] == opponentKing) return true;
+                if (i == 1 && colorOfPlayer == ChessColor.White && board[KingX + i, KingY - i] == ChessPiece.BlackPawn) return true;
+                if (board[KingX + i, KingY - i] == opponentBishop) return true;
+                if (board[KingX + i, KingY - i] == opponentQueen) return true;
+                // if found a piece in this way which can't attack the king, it is a safe direction, then break
+                if (board[KingX + i, KingY - i] != ChessPiece.Empty) break;
+                i++;  // if next grid is empty, continue searching
+            }
+            i = 1;
+            while (KingX - i >= 0 && KingY - i >= 0)  // go northwest
+            {
+                if (i == 1 && board[KingX - i, KingY - i] == opponentKing) return true;
+                if (i == 1 && colorOfPlayer == ChessColor.White && board[KingX - i, KingY - i] == ChessPiece.BlackPawn) return true;
+                if (board[KingX - i, KingY - i] == opponentBishop) return true;
+                if (board[KingX - i, KingY - i] == opponentQueen) return true;
+                // if found a piece in this way which can't attack the king, it is a safe direction, then break
+                if (board[KingX - i, KingY - i] != ChessPiece.Empty) break;
+                i++;  // if next grid is empty, continue searching
+            }
+            //if all directions are safe
+            return false;
+        }
         #endregion
 
 
